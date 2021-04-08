@@ -12,6 +12,7 @@
   "devDependencies": {
     "@nomiclabs/hardhat-truffle5": "^2.0.0",
     "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@openzeppelin/test-helpers": "^0.5.10",
     "hardhat": "^2.1.2",
     "hardhat-gas-reporter": "^1.0.4",
     "mocha": "^7.2.0",

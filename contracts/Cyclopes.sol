@@ -10,10 +10,10 @@ contract Cyclopes is ERC721, ERC721Enumerable, Ownable {
     string public constant R =
         "If it's not right, don't do it; if it's not true, don't say it. - Marcus Aurelius";
     uint16 public constant maxSupply = 5255;
+    bool public isSaleStarted = false;
     string private _baseTokenURI;
     string public provenance;
     uint256 public revealTimeStamp;
-    bool public isSaleStarted = false;
 
     constructor() ERC721("Cyclopes from the Ether", "CYCP") {}
 
@@ -36,10 +36,6 @@ contract Cyclopes is ERC721, ERC721Enumerable, Ownable {
 
     // Set sale (mintability) status
     function setSale(bool _setSaleBool) public onlyOwner {
-        require(
-            _setSaleBool != isSaleStarted,
-            "isSaleStarted's status is already set as that"
-        );
         isSaleStarted = _setSaleBool;
     }
 
@@ -64,8 +60,8 @@ contract Cyclopes is ERC721, ERC721Enumerable, Ownable {
     // Get minting limit (for a single transaction) based on current token supply
     function getCurrentMintLimit() public view returns (uint104) {
         require(
-            isSaleStarted == true && totalSupply() < maxSupply,
-            "Price unavailable because not on sale"
+            (isSaleStarted == true) && (totalSupply() < maxSupply),
+            "Mint limit unavailable because sale is not open"
         );
         uint256 _currentSupply = totalSupply();
         if (_currentSupply > 902) {
@@ -78,22 +74,22 @@ contract Cyclopes is ERC721, ERC721Enumerable, Ownable {
     // Get ether price based on current token supply
     function getCurrentPrice() public view returns (uint104) {
         require(
-            isSaleStarted == true && totalSupply() < maxSupply,
+            (isSaleStarted == true) && (totalSupply() < maxSupply),
             "Price unavailable because sale is not open"
         );
         uint256 _currentSupply = totalSupply();
 
-        if (_currentSupply > 5199) {
+        if (_currentSupply >= 5199) {
             return 1_000_000_000_000_000_000;
-        } else if (_currentSupply > 4484) {
+        } else if (_currentSupply >= 4484) {
             return 700_000_000_000_000_000;
-        } else if (_currentSupply > 2693) {
+        } else if (_currentSupply >= 2693) {
             return 500_000_000_000_000_000;
-        } else if (_currentSupply > 902) {
+        } else if (_currentSupply >= 902) {
             return 300_000_000_000_000_000;
-        } else if (_currentSupply > 187) {
+        } else if (_currentSupply >= 187) {
             return 100_000_000_000_000_000;
-        } else if (_currentSupply > 74) {
+        } else if (_currentSupply >= 74) {
             return 50_000_000_000_000_000;
         } else {
             return 30_000_000_000_000_000;
@@ -120,7 +116,6 @@ contract Cyclopes is ERC721, ERC721Enumerable, Ownable {
         for (uint8 i = 0; i < _quantityToMint; i++) {
             uint256 mintIndex = totalSupply();
             _safeMint(msg.sender, mintIndex);
-            console.log("Minted: %s", mintIndex);
         }
     }
 

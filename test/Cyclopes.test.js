@@ -3,30 +3,56 @@ const { expectRevert } = require("@openzeppelin/test-helpers");
 
 const Contract = artifacts.require("Cyclopes");
 
-// Traditional Truffle test
 contract("Cyclopes", (accounts) => {
   const [owner, acc1] = accounts;
   let contract;
 
+  // For tests involving minting:
+  const tier1Price = web3.utils.toWei("0.03", "ether");
+  const tier2Price = web3.utils.toWei("0.05", "ether");
+  const tier3Price = web3.utils.toWei("0.1", "ether");
+  const tier4Price = web3.utils.toWei("0.3", "ether");
+  const tier5Price = web3.utils.toWei("0.5", "ether");
+  const tier6Price = web3.utils.toWei("0.7", "ether");
+  const tier7Price = web3.utils.toWei("1", "ether");
+  const tier1Roof = 74;
+  const tier2Roof = 187;
+  const tier3Roof = 902;
+  const tier4Roof = 2693;
+  const tier5Roof = 4484;
+  const tier6Roof = 5199;
+  const tier7Roof = 5255; // maxSupply
+  const mintTier1Limit = 5;
+  const mintTier2Limit = 10;
+  const mintTier1Roof = 902;
+  const mintTier2Roof = 5255 // maxSupply
+  let currentSupply; // is reset to 0 after each test
+  async function mintAllTokensForTier(tierRoof, tierPrice, mintTierLimit) {
+    while (currentSupply < tierRoof) {
+      /*
+        Determining mint quantity (to not exceed tier mint quantity limit). Example:
+          (8 tierRoof) - (5 currentSupply) = (3 to mint)
+          If default mintQty is higher than 3, it'll be lowered to 3
+      */
+      let mintQty;
+      if ((tierRoof - currentSupply) < mintTierLimit) {
+        mintQty = tierRoof - currentSupply;
+      } else {
+        mintQty = mintTierLimit;
+      }
+      if (mintQty < mintTierLimit) {
+        await contract.mintCyclopes(mintQty, {value: tierPrice * mintQty});
+      } else {
+        await contract.mintCyclopes(mintQty, {value: tierPrice * mintQty});
+      }
+      currentSupply += mintQty;
+    }
+  }
+
   beforeEach(async () => {
     contract = await Contract.new();
+    currentSupply = 0; // for tests involving minting
   });
-  // it("setSale", async () => {
-  //   await contract.setSale(true);
-  //   const qty = 5;
-  //   const val = web3.utils.toWei("0.03", "ether");
-  //   console.log("val:", val);
-  //   const x1 = await contract.mintCyclopes(qty, {
-  //     from: acc1,
-  //     value: val * qty,
-  //   });
-
-  //   const x2 = await contract.withdraw({ from: owner });
-  //   let a1 = await web3.eth.getBalance(owner);
-  //   console.log(web3.utils.fromWei(a1));
-  //   let a2 = await web3.eth.getBalance(acc1);
-  //   console.log(web3.utils.fromWei(a2));
-  // });
 
   describe("Values at deployment", () => {
     it("R (truth)", async () => {
@@ -120,98 +146,91 @@ contract("Cyclopes", (accounts) => {
     });
   });
 
-  describe("getCurrentMintLimit function", () => {
-    it("Reverts expectedly", async () => {
+  // describe("getCurrentMintLimit function", () => {
+  //   it("Reverts expectedly when sale is not started", async () => { //TODO perhaps add revert test for totalSupply < maxSupply
+
+  //     console.log("baaaaaaaa")
+  //     console.log(await contract.isSaleStarted())
+  //     await expectRevert(
+  //       contract.getCurrentMintLimit(),
+  //       "Mint limit unavailable because sale is not open"
+  //     );
+  //     await contract.setSale(true, { from: owner });
+  //     assert.equal(await contract.getCurrentMintLimit(), 5);
+  //   });
+  //   it("Returns appropriate result when in each tier", async () => {
+
+  //     // Opening sale (to enable calling function)
+  //     await contract.setSale(true, { from: owner });
+
+  //     // Testing tier 1 floor
+  //     const returnedTier1MintLimit = await contract.getCurrentMintLimit();
+  //     assert.equal(returnedTier1MintLimit, mintTier1Limit)
+
+  //     // Minting tokens to reach tier 1 roof
+  //     await mintAllTokensForTier(tier1Roof, tier1Price, mintTier1Limit)
+  //     await mintAllTokensForTier(tier2Roof, tier2Price, mintTier1Limit)
+  //     const tier3RoofLess1 = tier3Roof - 1; // to enable testing tier 1 roof
+  //     await mintAllTokensForTier(tier3RoofLess1, tier3Price, mintTier1Limit)
+
+  //     // Testing tier 1 roof
+  //     const returnedTier1MintLimit2 = Number(await contract.getCurrentMintLimit());
+  //     assert.equal(returnedTier1MintLimit2, mintTier1Limit)
+
+  //     // Completing token minting for tier (see tier3RoofLess1)
+  //     await contract.mintCyclopes(1, {value: tier3Price})
+
+  //     // checking next tier is reached (roof of previous tier)
+  //     const currentTotalSupply = Number(await contract.totalSupply())
+  //     assert.equal(currentTotalSupply, tier3Roof)
+
+  //     // Testing tier 2
+  //     const returnedTier2MintLimit = await contract.getCurrentMintLimit();
+  //     assert.equal(returnedTier2MintLimit, mintTier2Limit)
+
+  //   }).timeout(40000);
+  // });
+
+  describe("getCurrentPrice function", () => {
+    it("Reverts expectedly when sale is not started", async () => { //TODO perhaps add revert test for totalSupply < maxSupply
       await expectRevert(
-        contract.getCurrentMintLimit(),
-        "Mint limit unavailable because sale is not open"
+        contract.getCurrentPrice(),
+        "Price unavailable because sale is not open"
       );
       await contract.setSale(true, { from: owner });
-      assert.equal(await contract.getCurrentMintLimit(), 5);
+      assert.equal(await contract.getCurrentPrice(), tier1Price);
     });
-    it("Returns appropriate result when next tier is reached", async () => {
+
+    it("Returns appropriate result when in each tier", async () => {
+
+      // Opening sale (to enable calling function)
       await contract.setSale(true, { from: owner });
 
-      const tier1Price = web3.utils.toWei("0.03", "ether");
-      const tier2Price = web3.utils.toWei("0.05", "ether");
-      const tier3Price = web3.utils.toWei("0.1", "ether");
-      const tier4Price = web3.utils.toWei("0.3", "ether");
-      const tier5Price = web3.utils.toWei("0.5", "ether");
-      const tier6Price = web3.utils.toWei("0.7", "ether");
-      const tier7Price = web3.utils.toWei("1", "ether");
-      const tier1Roof = 74;
-      const tier2Roof = 187;
-      const tier3Roof = 902;
-      const tier4Roof = 2693;
-      const tier5Roof = 4484;
-      const tier6Roof = 5199;
-      const tier7Roof = 5255; // maxSupply
+      // Testing tier 1 floor
+      const returnedTier1Price = await contract.getCurrentPrice();
+      assert.equal(String(returnedTier1Price), tier1Price)
 
-      const mintTier1Roof = 902;
-      const mintTier2Roof = tier7Roof // maxSupply
+      // Minting tokens to reach tier 1 roof
+      const tier1RoofLess1 = tier1Roof - 1; // to enable testing tier 1 roof
+      await mintAllTokensForTier(tier1RoofLess1, tier1Price, mintTier1Limit)
 
-      const mintTier1Limit = 5;
+      // Testing tier 1 roof
+      const returnedTier1Price2 = Number(await contract.getCurrentPrice());
+      assert.equal(returnedTier1Price2, tier1Price)
 
-      let currentSupply = 0;
+      // Completing token minting for tier (see tier3RoofLess1)
+      await contract.mintCyclopes(1, {value: tier1Price})
 
+      // checking next tier is reached (roof of previous tier)
+      const currentTotalSupply = Number(await contract.totalSupply())
+      assert.equal(currentTotalSupply, tier1Roof)
 
-      while (currentSupply < tier1Roof) {
-        /*
-          Determining mint quantity (in order to not exceed tier mint quantity limit). 
-          Example:
-            (8 tierRoof) - (5 currentSupply) = (3 to mint)
-            If default mintQty is higher than 3, it'll be lowered to 3
-        */
-        let mintQty;
-        if ((tier1Roof - currentSupply) < mintTier1Limit) {
-          mintQty = tier1Roof - currentSupply;
-        } else {
-          mintQty = mintTier1Limit;
-        }
-
-        if (mintQty < mintTier1Limit) {
-          await contract.mintCyclopes(mintQty, {value: web3.utils.toWei("0.03") * mintQty}); //TODO update price to be variable
-        } else {
-          await contract.mintCyclopes(mintQty, {value: web3.utils.toWei("0.03") * mintQty}); // change to use tier1Price and tier1Roof
-
-        }
-        currentSupply += mintQty;
-      }
-
-      await contract.mintCyclopes(1, {value: web3.utils.toWei("0.05") * 1}); //TODO insert expectRevert, before that assert totalSupply to confirm it
-
-      async function mintAllTokensForTier(tierRoof, tierPrice, mintTierLimit) {
-        while (currentSupply < tierRoof) {
-          console.log("inside")
-          /*
-            Determining mint quantity (in order to not exceed tier mint quantity limit). 
-            Example:
-              (8 tierRoof) - (5 currentSupply) = (3 to mint)
-              If default mintQty is higher than 3, it'll be lowered to 3
-          */
-          let mintQty;
-          if ((tierRoof - currentSupply) < mintTierLimit) {
-            mintQty = tierRoof - currentSupply;
-          } else {
-            mintQty = mintTierLimit;
-          }
-  
-          if (mintQty < mintTierLimit) {
-            await contract.mintCyclopes(mintQty, {value: tierPrice * mintQty});
-          } else {
-            await contract.mintCyclopes(mintQty, {value: tierPrice * mintQty});
-  
-          }
-          currentSupply += mintQty;
-          console.log("currentSupply:%s \ttierRoof: %s")
-        }
-      }
-
-      await mintAllTokensForTier(tier2Roof, tier2Price, mintTier1Limit)
-      await contract.mintCyclopes(1, {value: web3.utils.toWei("0.05") * 1}); //TODO insert expectRevert, before that assert totalSupply to confirm it
-
-    });
-  });
+      // Testing tier 2
+      const returnedTier2Price = await contract.getCurrentPrice();
+      assert.equal(returnedTier2Price, tier2Price)
+      
+    }).timeout(40000);
+  })
 
 
 
@@ -222,7 +241,7 @@ contract("Cyclopes", (accounts) => {
 
 
 
-  
+
   // describe("getCurrentPrice function", () => {
   //   it("Reverts expectedly", async () => {
   //     await expectRevert(

@@ -58,13 +58,13 @@ contract Cyclopes is ERC721, ERC721Enumerable, Ownable {
     }
 
     // Get minting limit (for a single transaction) based on current token supply
-    function getCurrentMintLimit() public view returns (uint104) {
+    function getCurrentMintLimit() public view returns (uint8) {
         require(
             (isSaleStarted == true) && (totalSupply() < maxSupply),
             "Mint limit unavailable because sale is not open"
         );
         uint256 _currentSupply = totalSupply();
-        if (_currentSupply > 902) {
+        if (_currentSupply >= 902) {
             return 10;
         } else {
             return 5;
@@ -72,7 +72,7 @@ contract Cyclopes is ERC721, ERC721Enumerable, Ownable {
     }
 
     // Get ether price based on current token supply
-    function getCurrentPrice() public view returns (uint104) {
+    function getCurrentPrice() public view returns (uint64) {
         require(
             (isSaleStarted == true) && (totalSupply() < maxSupply),
             "Price unavailable because sale is not open"
@@ -116,6 +116,7 @@ contract Cyclopes is ERC721, ERC721Enumerable, Ownable {
         for (uint8 i = 0; i < _quantityToMint; i++) {
             uint256 mintIndex = totalSupply();
             _safeMint(msg.sender, mintIndex);
+            console.log("Minted - \tNFT #%s \tcurrentSupply: %s", mintIndex, totalSupply());
         }
     }
 

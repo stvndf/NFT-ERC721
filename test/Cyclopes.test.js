@@ -202,34 +202,92 @@ contract("Cyclopes", (accounts) => {
     });
 
     it("Returns appropriate result when in each tier", async () => {
+      await contract.setSale(true, {from: owner})
 
-      // Opening sale (to enable calling function)
-      await contract.setSale(true, { from: owner });
 
-      // Testing tier 1 floor
-      const returnedTier1Price = await contract.getCurrentPrice();
-      assert.equal(String(returnedTier1Price), tier1Price)
 
-      // Minting tokens to reach tier 1 roof
-      const tier1RoofLess1 = tier1Roof - 1; // to enable testing tier 1 roof
-      await mintAllTokensForTier(tier1RoofLess1, tier1Price, mintTier1Limit)
+      //tier1Roof // 74 // I should be able to deduct 1 or 2 here if I want to
+      // mintTier1Limit // 5
+      let totalMintQty = tier1Roof;
+      let fullRuns = Math.floor(totalMintQty / mintTier1Limit) // number of 5s or 10s to run (e.g. 50 of 5s is 10)
+      let partialRuns = totalMintQty % mintTier1Limit // remainder (e.g. 54 of 5s is 4)
 
-      // Testing tier 1 roof
-      const returnedTier1Price2 = Number(await contract.getCurrentPrice());
-      assert.equal(returnedTier1Price2, tier1Price)
 
-      // Completing token minting for tier (see tier3RoofLess1)
-      await contract.mintCyclopes(1, {value: tier1Price})
 
-      // checking next tier is reached (roof of previous tier)
-      const currentTotalSupply = Number(await contract.totalSupply())
-      assert.equal(currentTotalSupply, tier1Roof)
 
-      // Testing tier 2
-      const returnedTier2Price = await contract.getCurrentPrice();
-      assert.equal(returnedTier2Price, tier2Price)
-      
-    }).timeout(40000);
+      for (let i=0; i<fullRuns; i++) {
+        await contract.mintCyclopes(5, {value: tier1Price * 5})
+      }
+      if (partialRuns > 0) {
+        await contract.mintCyclopes(partialRuns, {value: tier1Price * partialRuns})
+      }
+
+
+      totalMintQty = tier2Roof - tier1Roof - 1; //TODO remove -1?
+      fullRuns = Math.floor(totalMintQty / mintTier1Limit) // number of 5s or 10s to run (e.g. 50 of 5s is 10)
+      partialRuns = totalMintQty % mintTier1Limit // remainder (e.g. 54 of 5s is 4)
+      for (let i=0; i<fullRuns; i++) {
+        await contract.mintCyclopes(5, {value: tier2Price * 5})
+      }
+      if (partialRuns > 0) {
+        await contract.mintCyclopes(partialRuns, {value: tier2Price * partialRuns})
+      }
+      await contract.mintCyclopes(1, {value: tier2Price})
+
+      totalMintQty = tier3Roof - tier2Roof;
+      fullRuns = Math.floor(totalMintQty / mintTier1Limit) // number of 5s or 10s to run (e.g. 50 of 5s is 10)
+      partialRuns = totalMintQty % mintTier1Limit // remainder (e.g. 54 of 5s is 4)
+      for (let i=0; i<fullRuns; i++) {
+        await contract.mintCyclopes(5, {value: tier3Price * 5})
+      }
+      if (partialRuns > 0) {
+        await contract.mintCyclopes(partialRuns, {value: tier3Price * partialRuns})
+      }
+
+      totalMintQty = tier4Roof - tier3Roof;
+      fullRuns = Math.floor(totalMintQty / mintTier2Limit) // number of 5s or 10s to run (e.g. 50 of 5s is 10)
+      partialRuns = totalMintQty % mintTier2Limit // remainder (e.g. 54 of 5s is 4)
+      for (let i=0; i<fullRuns; i++) {
+        await contract.mintCyclopes(10, {value: tier4Price * 10})
+      }
+      if (partialRuns > 0) {
+        await contract.mintCyclopes(partialRuns, {value: tier4Price * partialRuns})
+      }
+
+      totalMintQty = tier5Roof - tier4Roof;
+      fullRuns = Math.floor(totalMintQty / mintTier2Limit) // number of 5s or 10s to run (e.g. 50 of 5s is 10)
+      partialRuns = totalMintQty % mintTier2Limit // remainder (e.g. 54 of 5s is 4)
+      for (let i=0; i<fullRuns; i++) {
+        await contract.mintCyclopes(10, {value: tier5Price * 10})
+      }
+      if (partialRuns > 0) {
+        await contract.mintCyclopes(partialRuns, {value: tier5Price * partialRuns})
+      }
+
+
+      totalMintQty = tier6Roof - tier5Roof;
+      fullRuns = Math.floor(totalMintQty / mintTier2Limit) // number of 5s or 10s to run (e.g. 50 of 5s is 10)
+      partialRuns = totalMintQty % mintTier2Limit // remainder (e.g. 54 of 5s is 4)
+      for (let i=0; i<fullRuns; i++) {
+        await contract.mintCyclopes(10, {value: tier6Price * 10})
+      }
+      if (partialRuns > 0) {
+        await contract.mintCyclopes(partialRuns, {value: tier6Price * partialRuns})
+      }
+
+      totalMintQty = tier7Roof - tier6Roof;
+      fullRuns = Math.floor(totalMintQty / mintTier2Limit) // number of 5s or 10s to run (e.g. 50 of 5s is 10)
+      partialRuns = totalMintQty % mintTier2Limit // remainder (e.g. 54 of 5s is 4)
+      for (let i=0; i<fullRuns; i++) {
+        await contract.mintCyclopes(10, {value: tier7Price * 10})
+      }
+      if (partialRuns > 0) {
+        await contract.mintCyclopes(partialRuns, {value: tier7Price * partialRuns})
+      }
+
+      // await contract.mintCyclopes(1, {value: tier7Price * 1}) // expect revert
+
+    }).timeout(150000);
   })
 
 
@@ -242,17 +300,5 @@ contract("Cyclopes", (accounts) => {
 
 
 
-  // describe("getCurrentPrice function", () => {
-  //   it("Reverts expectedly", async () => {
-  //     await expectRevert(
-  //       contract.getCurrentPrice(),
-  //       "Mint limit unavailable because sale is not open"
-  //     );
-  //     await contract.setSale(true, { from: owner });
-  //     assert.equal(
-  //       await contract.getCurrentPrice(),
-  //       web3.utils.toWei("0.03", "ether")
-  //     );
-  //   });
-  // });
+
 });

@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.3;
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -116,7 +115,6 @@ contract Cyclopes is ERC721, ERC721Enumerable, Ownable {
         for (uint8 i = 0; i < _quantityToMint; i++) {
             uint256 mintIndex = totalSupply();
             _safeMint(msg.sender, mintIndex);
-            console.log("Minted NFT: #%s \tcurrentSupply: %s", mintIndex, totalSupply());
         }
     }
 
